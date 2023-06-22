@@ -15,6 +15,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Media;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 
 namespace SnakeGame
 {
@@ -32,8 +33,7 @@ namespace SnakeGame
         static int width = 20;
         static int height = 15;
         static int score = 0;
-        static int highScore = 0;
-        static int delay = 150;
+         static int delay = 150;
         static bool gameOver = false;
         static Random random = new Random();
         static int foodX, foodY;
@@ -41,7 +41,9 @@ namespace SnakeGame
         static List<Point> tailSegments = new List<Point>();
         static int tailLength = 0;
         int blockSize;
+        bool gameStarted = false;
         SoundPlayer Point = new SoundPlayer();
+        SoundPlayer Loss = new SoundPlayer();
 
 
         public Form1()
@@ -53,17 +55,17 @@ namespace SnakeGame
             KeyDown += Form1_KeyDown;
             gameTimer.Tick += gameTimer_Tick;
             gameTimer.Interval = delay;
-
+            label1.Visible = true;
+            label2.Visible = true;
             Point.SoundLocation = @"C:\Users\emmsg\source\repos\SnakeGame\SnakeGame\Resources\511397__pjhedman__se2-ding.wav";
             Point.Load();
+            Loss.SoundLocation = @"C:\Users\emmsg\source\repos\SnakeGame\SnakeGame\Resources\382310__myfox14__game-over-arcade.wav";
+            Loss.Load();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            if (File.Exists(@"C:HighScore.txt"))
-            {
-                highScore = int.Parse(File.ReadAllText(@"C:HighScore.txt"));
-            }
+           
 
             gameTimer.Start();
         }
@@ -83,13 +85,15 @@ namespace SnakeGame
         {
             Graphics graphics = e.Graphics;
 
+            
+
             for (int x = 0; x < width; x++)
             {
-                graphics.DrawLine(Pens.DarkGray, x * blockSize, 0, x * blockSize, ClientSize.Height);
+                graphics.DrawLine(Pens.Black, x * blockSize, 0, x * blockSize, ClientSize.Height);
             }
             for (int y = 0; y < height; y++)
             {
-                graphics.DrawLine(Pens.DarkGray, 0, y * blockSize, ClientSize.Width, y * blockSize);
+                graphics.DrawLine(Pens.Black, 0, y * blockSize, ClientSize.Width, y * blockSize);
             }
 
             Rectangle Snake = new Rectangle(headX * blockSize, headY * blockSize, blockSize, blockSize);
@@ -126,10 +130,11 @@ namespace SnakeGame
             graphics.FillEllipse(Brushes.Red, foodRect);
 
             string scoreText = $"Score: {score}";
-            graphics.DrawString(scoreText, Font, Brushes.Black, new PointF(10, 10));
+            Font scoreFont = new Font(Font.FontFamily, 10);
+            graphics.DrawString(scoreText, scoreFont, Brushes.Black, new PointF(2, 22));
 
-            string highScoreText = $"High Score: {highScore}";
-            graphics.DrawString(highScoreText, Font, Brushes.Black, new PointF(10, 30));
+
+
 
             if (gameOver)
             {
@@ -138,11 +143,25 @@ namespace SnakeGame
                 float gameOverX = (ClientSize.Width - gameOverSize.Width) / 2;
                 float gameOverY = (ClientSize.Height - gameOverSize.Height) / 2;
                 graphics.DrawString(gameOverText, Font, Brushes.White, new PointF(gameOverX, gameOverY));
+                
             }
         }
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.Space && !gameStarted)
+            {
+                gameStarted = true;
+                label1.Visible = false;
+                label2.Visible = false;
+                gameTimer.Start(); // Start the game
+            }
+
+
+            
+
+
+
             switch (e.KeyCode)
             {
                 case Keys.Up:
@@ -192,6 +211,11 @@ namespace SnakeGame
 
         private void gameTimer_Tick(object sender, EventArgs e)
         {
+            if (!gameStarted)
+            {
+                return;
+            }
+
             Logic();
             Refresh();
         }
@@ -238,17 +262,14 @@ namespace SnakeGame
             if (headX == foodX && headY == foodY)
             {
                 score += 10;
-                if (score > highScore)
-                {
-                    highScore = score;
-                    Point.Play();
-                }
+                Point.Play();
                 tailLength++;
                 GenerateFood();
             }
 
             if (headX < 0 || headX >= width || headY < 0 || headY >= height)
             {
+                
                 GameOver();
                 return;
             }
@@ -259,8 +280,8 @@ namespace SnakeGame
             bool validFood = false;
             while (!validFood)
             {
-                foodX = random.Next(0, width);
-                foodY = random.Next(0, height);
+                foodX = random.Next(1, width - 1); 
+                foodY = random.Next(1, height - 1); 
 
                 validFood = true;
                 if (foodX == headX && foodY == headY)
@@ -282,17 +303,11 @@ namespace SnakeGame
 
         private void GameOver()
         {
+            Loss.Play();
             gameTimer.Stop();
             gameOver = true;
 
-            try
-            {
-                File.WriteAllText(@"C:HighScore.txt", highScore.ToString());
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to save high score: {ex.Message}");
-            }
+          
 
             MessageBox.Show("Game Over");
         }

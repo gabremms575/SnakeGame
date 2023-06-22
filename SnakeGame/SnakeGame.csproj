@@ -88,5 +88,8 @@
   <ItemGroup>
     <None Include="Resources\511397__pjhedman__se2-ding.wav" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\382310__myfox14__game-over-arcade.wav" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
